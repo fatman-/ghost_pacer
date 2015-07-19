@@ -1,27 +1,3 @@
-/**
- * Adapted from a script provided by Moveable Type under a Creative Commons license
- **/
-
-function you_distance(lat1, lon1, lat2, lon2) {
-  var R = 6371; // km
-  var dLat = (lat2 - lat1).toRad();
-  var dLon = (lon2 - lon1).toRad(); 
-  var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-          Math.cos(lat1.toRad()) * Math.cos(lat2.toRad()) * 
-          Math.sin(dLon / 2) * Math.sin(dLon / 2); 
-  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); 
-  var d = R * c;
-  return d;
-}
-Number.prototype.toRad = function() {
-  return this * Math.PI / 180;
-}
-
-function ghost_distance(pace, start_time) {
-  seconds_elapsed = Date.now() - start_time;
-  distance_travelled = seconds_elapsed / (pace * 60)
-}
-
 var locationOptions = {
   enableHighAccuracy: true, 
   maximumAge: 10000, 
@@ -85,18 +61,53 @@ main.on('click', 'select', function(e) {
     window.add(you_circle);
     window.show(ghost_circle);
     window.show(you_circle);
-  });
   
-  window.on('select', function(e) {
-    var ghost_circle_pos = ghost_circle.position();
-    var you_circle_pos = you_circle.position();
-    ghost_circle_pos.y = 10; you_circle_pos.y = 10;
-    var now_you_pos = navigator.geolocation.getCurrentPosition(locationSuccess, locationError, locationOptions);
-    var ghost_distance = ghost_distance(ghost_pace, start_time);
-    var you_distance = you_distance(start_you_pos.coords.latitude, start_you_pos.coords.longitude, now_you_pos.coords.latitude, now_you_pos.coords.longitude);
-    start_time = Date.now();
-    start_you_pos = navigator.geolocation.getCurrentPosition(locationSuccess, locationError, locationOptions);
-    /* For every 100m, 10 pixels of difference... */
-    (you_distance > ghost_distance) ? you_circle_pos.y += (you_distance - ghost_distance) * 1000 : ghost_circle_pos.y += (ghost_distance - you_distance);
-  })
+  
+    window.on('select', function(e) {
+      
+      /**
+       * Adapted from a script provided by Moveable Type under a Creative Commons license
+       **/
+
+      function you_distance(lat1, lon1, lat2, lon2) {
+        var R = 6371; // km
+        var dLat = (lat2 - lat1).toRad();
+        var dLon = (lon2 - lon1).toRad(); 
+        var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1.toRad()) * Math.cos(lat2.toRad()) * 
+                Math.sin(dLon / 2) * Math.sin(dLon / 2); 
+        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); 
+        var d = R * c;
+        return d;
+      }
+      Number.prototype.toRad = function() {
+        return this * Math.PI / 180;
+      };
+
+      function ghost_distance(pace, start_time) {
+        var seconds_elapsed = Date.now() - start_time;
+        var distance_travelled = seconds_elapsed / (pace * 60);
+        return distance_travelled;
+      }
+      
+      var ghost_circle_pos = ghost_circle.position();
+      var you_circle_pos = you_circle.position();
+      /*ghost_circle_pos.y = 10; you_circle_pos.y = 10;*/
+      var now_you_pos = navigator.geolocation.getCurrentPosition(locationSuccess, locationError, locationOptions);
+      var ghost_distance_literal = ghost_distance(ghost_pace, start_time);
+      var you_distance_literal = you_distance(start_you_pos.coords.latitude, start_you_pos.coords.longitude, now_you_pos.coords.latitude, now_you_pos.coords.longitude);
+      /*start_time = Date.now();
+      start_you_pos = navigator.geolocation.getCurrentPosition(locationSuccess, locationError, locationOptions);*/
+      /* For every 100m, 10 pixels of difference... */
+      if (you_distance_literal > ghost_distance_literal) {
+        you_circle_pos.y += (you_distance_literal - ghost_distance_literal) * 1000;
+        you_circle.animate('position', you_circle_pos, 1000);
+      }
+      else {
+        ghost_circle_pos.y += (ghost_distance_literal - you_distance_literal);
+        ghost_circle.animate('position', ghost_circle_pos, 1000);
+      }
+    
+      });
+  });
 });
